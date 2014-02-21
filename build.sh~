@@ -1,0 +1,1 @@
+pdp11-aout-gcc -m10  -Ttext 1000 -msoft-float  -nostartfiles  -nodefaultlibs  -nostdlib   crt0.s printf.c tu60exerciser.c divmulmod.s ashlhi3.s xorhi3.s doReset.s hdlcproto.c
