@@ -63,8 +63,6 @@ void writeTA11DBUF(unsigned short data) {
   *dbuf = data;
 }
 
-volatile unsigned short flag;
-
 short writeContinuous (short drive) {
   unsigned char data=0;
   unsigned short cmd;
@@ -73,7 +71,7 @@ short writeContinuous (short drive) {
   writeTA11CSR(cmd);
   while (!pollConsole()) {
     // wait for transfer request
-    while (!(000200 & readTA11CSR()) && !flag);
+    while (!(000200 & readTA11CSR()));
     writeTA11DBUF((unsigned short) data++);
   }
 }
@@ -81,21 +79,21 @@ short writeContinuous (short drive) {
 short writeBlock (short drive, unsigned char * buf, short size) {
   unsigned short cmd;
   // Wait for unit to become ready
-  while (!(000040 & readTA11CSR()) && !flag);
+  while (!(000040 & readTA11CSR()));
   cmd = drive << 8;
   cmd |= WRITE;
   writeTA11CSR(cmd);
   while (size>0) {
     // wait for transfer request
-    while (!(000200 & readTA11CSR()) && !flag);
+    while (!(000200 & readTA11CSR()));
     writeTA11DBUF((unsigned short) *(buf++));
     size--;
   }
-  while (!(000200 & readTA11CSR()) && !flag);
+  while (!(000200 & readTA11CSR()));
   // do ILBS sequence
   cmd =  readTA11CSR() | 000020;
   writeTA11CSR(cmd);
-  while (!(000040 & readTA11CSR()) && !flag);
+  while (!(000040 & readTA11CSR()));
   return readTA11CSR();
 }
 
@@ -107,7 +105,7 @@ short readContinuous (short drive) {
   writeTA11CSR(cmd);
   while (!pollConsole()) {
     // wait for transfer request
-    while (!(0100240 & readTA11CSR()) && !flag);
+    while (!(0100240 & readTA11CSR()));
     if (0100040 & readTA11CSR()) break;
     readTA11DBUF( );
   }
@@ -116,14 +114,14 @@ short readContinuous (short drive) {
 short readBlock (short drive, unsigned char * buf, short size) {
   unsigned short cmd;
   // Wait for unit to become ready
-  while (!(000040 & readTA11CSR()) && !flag);
+  while (!(000040 & readTA11CSR()));
   cmd = drive << 8;
   cmd |= READ;
   printf ("Now writing READ cmd\r\n");
   writeTA11CSR(cmd);
   while (size>0) {
     // wait for transfer request
-    while (!(0100240 & readTA11CSR()) && !flag);
+    while (!(0100240 & readTA11CSR()));
     if (0100040 & readTA11CSR()) break;
     *(buf++) = (unsigned char) readTA11DBUF( );
     size--;
@@ -132,22 +130,22 @@ short readBlock (short drive, unsigned char * buf, short size) {
     printf("Fail: remaining bytes to read size=%d\n", size);
   }
   else {
-    while (!(000200 & readTA11CSR()) && !flag);
+    while (!(000200 & readTA11CSR()));
     // do ILBS sequence
     cmd =  readTA11CSR() | 000020;
     writeTA11CSR(cmd);
     printf ("Now waiting for READY after read.\r\n");
-    while (!(000040 & readTA11CSR()) && !flag);
+    while (!(000040 & readTA11CSR()));
   }
   return readTA11CSR();
 }
 
 short doSimpleCommand(cmd,drive) {
   // Wait for unit to become ready
-  while (!(000040 & readTA11CSR()) && !flag);
+  while (!(000040 & readTA11CSR()));
   cmd = cmd | (drive << 8);
   writeTA11CSR(cmd);
-  while (!(000040 & readTA11CSR()) && !flag);
+  while (!(000040 & readTA11CSR()));
   return readTA11CSR();
 }
 
@@ -258,8 +256,6 @@ int main () {
     ch = getchar();
     putchar (ch);
     printf("\r\n");
-    flag = 0;
-    //    enableRxInterrupt();
     switch (ch) {
     case '0':
       printf ("Result: %04x\r\n", rewind(drive));
