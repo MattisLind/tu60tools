@@ -218,12 +218,12 @@ void writeSerialChar (char ch) {
 #define CMD_WRITE_RESULT (0x80 | CMD_WRITE)
 #define CMD_WFG_RESULT (0x80 | CMD_WFG)
 
-void sendAck(char drive, char seqno) {
-  writeHdlcFrame (CMD_ACK, drive, seqno, NULL, 0);
+void sendAck(char drive) {
+  writeHdlcFrame (CMD_ACK, drive, NULL, 0);
 }
 
-void sendNack(char drive, char seqno) {
-  writeHdlcFrame (CMD_NACK, drive, seqno,NULL, 0);
+void sendNack(char drive) {
+  writeHdlcFrame (CMD_NACK, drive,NULL, 0);
 }
 
 int main () {
@@ -237,7 +237,6 @@ int main () {
   short drive = 0, i;
   short patternSize;
   int size;
-  char rxseqno, newseqno;
   readBuf[128]=0;
   while (ch != 'q' && ch != 'Q') {
     printf ("TU60 Exerciser drive %d\r\n", drive);
@@ -337,16 +336,16 @@ int main () {
     case 'R':
     case 'r':
       do {
-	ret = readHdlcFrame(&cmd, &drive, &newseqno, buf, 128, &size);
+	ret = readHdlcFrame(&cmd, &drive, buf, 128, &size);
 	printf("Received cmd=%d drive=%d size=%04X ret=%d\n\r", cmd, drive, size, ret);
 	switch (cmd) {
 	case CMD_WRITE:
 	  ret = writeBlock(drive, buf, size);
-	  writeHdlcFrame (cmd | 0x80, drive, rxseqno, &ret, 2);
+	  writeHdlcFrame (cmd | 0x80, drive, &ret, 2);
 	  break;
 	case CMD_WFG:
 	  ret = writeFileGap(drive);
-	  writeHdlcFrame (cmd | 0x80, drive, rxseqno, &ret, 2);
+	  writeHdlcFrame (cmd | 0x80, drive, &ret, 2);
 	  break;
 	default:
 	  printf ("Unhandled cmd = %d\r\n", cmd);
