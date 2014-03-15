@@ -38,9 +38,8 @@ unsigned short reverseCrcBits()
 #define CRC1 4
 #define DRIVE 5
 #define CRC2 6
-#define SEQNO 7
 
-int readHdlcFrame(char * cmd, char * drive, char * seq, char * buf, int maxSize, int * size) {
+int readHdlcFrame(char * cmd, char * drive, char * buf, int maxSize, int * size) {
   int state = WAITING_FOR_FLAG;
   char ch, sum=0;
   int demuxState=COMMAND, i=0;
@@ -69,11 +68,6 @@ int readHdlcFrame(char * cmd, char * drive, char * seq, char * buf, int maxSize,
       break;
     case DRIVE:
       *drive = ch;
-      computeCrcChar(ch);
-      demuxState = SEQNO;
-      break;
-    case SEQNO:
-      *seq = ch;
       computeCrcChar(ch);
       demuxState = SIZELO;
       break;
@@ -123,7 +117,7 @@ void writeEscapedChar (char ch) {
   else writeSerialChar(ch);
 }
 
-void writeHdlcFrame (char cmd, char drive, char seqno, char * buf, int size) {
+void writeHdlcFrame (char cmd, char drive, char * buf, int size) {
   unsigned short crc, tmp; 
   int i;
   out=0;
@@ -134,8 +128,6 @@ void writeHdlcFrame (char cmd, char drive, char seqno, char * buf, int size) {
   computeCrcChar(cmd); 
   writeEscapedChar(drive);
   computeCrcChar(drive); 
-  writeEscapedChar(seqno);
-  computeCrcChar(seqno); 
   writeEscapedChar(size & 0xff);
   computeCrcChar(size & 0xff);
   tmp = size;
