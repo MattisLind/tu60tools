@@ -3,7 +3,7 @@ tu60tools
 
 Tools for the TU60 tape drive
 
-The TU60 tools is a command line tool to exercise the TU60 drive on a PDP-11. It shoulw work on any PDP-11 that has the M7892
+The TU60 tools is a command line tool to exercise the TU60 drive on a PDP-11. It should work on any PDP-11 that has the M7892
 TA11 board, TU60 drive and at least 16 k memory.
 
 To build requires to make a crosscompiler. 
