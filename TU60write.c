@@ -9,8 +9,8 @@
 #include <libgen.h>
 
 
-int readHdlcFrame(char *, char *, char *, char *, int, int *);
-void writeHdlcFrame (char, char, char, char *, int);
+int readHdlcFrame(char *, char *, char *, int, int *);
+void writeHdlcFrame (char, char, char *, int);
 int serfd;
 
 char readSerialChar () {
