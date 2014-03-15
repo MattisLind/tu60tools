@@ -1,6 +1,6 @@
 char readSerialChar();
 void writeSerialChar(char);
-
+/*
 #define CRC16 0x8005;
 unsigned short out;
 void computeCrcChar (char  tmp) {
@@ -26,6 +26,7 @@ unsigned short reverseCrcBits()
   return crc;
 }
 
+*/
 
 #define WAITING_FOR_FLAG 0
 #define WAITING_FOR_END_FLAG 2
@@ -44,7 +45,7 @@ int readHdlcFrame(char * cmd, char * drive, char * buf, int maxSize, int * size)
   int state = WAITING_FOR_FLAG;
   char ch, sum=0;
   int demuxState=COMMAND, i=0;
-  out=0;
+  //  out=0;
   while (state==WAITING_FOR_FLAG) {
     ch = readSerialChar();
     if (ch==0x7e) {
@@ -96,7 +97,8 @@ int readHdlcFrame(char * cmd, char * drive, char * buf, int maxSize, int * size)
 	return 1;
       }
       if (i == *size) {
-	demuxState = CRC1;
+	//	demuxState = CRC1;
+	demuxState = SUM;
       }    
       break;
       /*
@@ -133,7 +135,7 @@ void writeEscapedChar (char ch) {
 void writeHdlcFrame (char cmd, char drive, char * buf, int size) {
   unsigned short crc, tmp, sum=0; 
   int i;
-  out=0;
+  //out=0;
   // write start of frame 
   writeSerialChar(0x7e);
   // write command byte
@@ -152,8 +154,8 @@ void writeHdlcFrame (char cmd, char drive, char * buf, int size) {
   //computeCrcChar(tmp & 0xff);
   sum += tmp & 0xff;
   for (i=0; i<size; i++) {
-    computeCrcChar(buf[i]);
-    //writeEscapedChar(buf[i]);
+    //computeCrcChar(buf[i]);
+    writeEscapedChar(buf[i]);
     sum += buf[i];
   }
   /*
