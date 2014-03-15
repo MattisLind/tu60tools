@@ -38,6 +38,7 @@ unsigned short reverseCrcBits()
 #define CRC1 4
 #define DRIVE 5
 #define CRC2 6
+#define SUM 7
 
 int readHdlcFrame(char * cmd, char * drive, char * buf, int maxSize, int * size) {
   int state = WAITING_FOR_FLAG;
@@ -63,28 +64,33 @@ int readHdlcFrame(char * cmd, char * drive, char * buf, int maxSize, int * size)
     switch (demuxState) {
     case COMMAND:
       *cmd = ch;
-      computeCrcChar(ch);
+      //computeCrcChar(ch);
+      sum += ch;
       demuxState = DRIVE;
       break;
     case DRIVE:
       *drive = ch;
-      computeCrcChar(ch);
+      //computeCrcChar(ch);
+      sum += ch;
       demuxState = SIZELO;
       break;
     case SIZELO:
       *size = (0xff & (int) ch);
-      computeCrcChar(ch);
+      //computeCrcChar(ch);
+      sum += ch;
       demuxState= SIZEHI;
       break;
     case SIZEHI:
       *size += (0xff & ((int) ch))*256;
-      computeCrcChar(ch); 
+      //computeCrcChar(ch); 
+      sum += ch;
       demuxState = DATA;
       if (*size==0) demuxState=CRC1;
       break;
     case DATA:
       buf[i]=ch;
-      computeCrcChar(ch); 
+      //computeCrcChar(ch); 
+      sum += ch;
       i++;
       if (i > maxSize) {
 	return 1;
@@ -93,6 +99,7 @@ int readHdlcFrame(char * cmd, char * drive, char * buf, int maxSize, int * size)
 	demuxState = CRC1;
       }    
       break;
+      /*
     case CRC1:
       computeCrcChar(ch); 
       demuxState = CRC2;
@@ -101,12 +108,18 @@ int readHdlcFrame(char * cmd, char * drive, char * buf, int maxSize, int * size)
       computeCrcChar(ch); 
       state = WAITING_FOR_END_FLAG;
       break;
+      */
+    case SUM:
+      sum += ch;
+      state = WAITING_FOR_END_FLAG;
+      break;
     }
   }
   do {
     ch = readSerialChar();
   } while (ch != 0x7e);
-  return !out;
+  //return !out;
+  return !sum;
 }
 
 void writeEscapedChar (char ch) {
@@ -118,26 +131,32 @@ void writeEscapedChar (char ch) {
 }
 
 void writeHdlcFrame (char cmd, char drive, char * buf, int size) {
-  unsigned short crc, tmp; 
+  unsigned short crc, tmp, sum=0; 
   int i;
   out=0;
   // write start of frame 
   writeSerialChar(0x7e);
   // write command byte
   writeEscapedChar(cmd);
-  computeCrcChar(cmd); 
+  //computeCrcChar(cmd); 
+  sum += cmd;
   writeEscapedChar(drive);
-  computeCrcChar(drive); 
+  //computeCrcChar(drive); 
+  sum += drive;
   writeEscapedChar(size & 0xff);
-  computeCrcChar(size & 0xff);
+  //computeCrcChar(size & 0xff);
+  sum += size & 0xff;
   tmp = size;
   for (i=0; i<8; i++) tmp = tmp >> 1;
   writeEscapedChar(tmp & 0xff);
-  computeCrcChar(tmp & 0xff);
+  //computeCrcChar(tmp & 0xff);
+  sum += tmp & 0xff;
   for (i=0; i<size; i++) {
     computeCrcChar(buf[i]);
-    writeEscapedChar(buf[i]);
+    //writeEscapedChar(buf[i]);
+    sum += buf[i];
   }
+  /*
   computeCrcChar(0);
   computeCrcChar(0);
   crc=reverseCrcBits();
@@ -145,6 +164,8 @@ void writeHdlcFrame (char cmd, char drive, char * buf, int size) {
   writeEscapedChar(crc & 0xff);
   for (i=0; i<8; i++) tmp = tmp >> 1;
   writeEscapedChar(tmp & 0xff);
+  */
+  writeEscapedChar(-sum);
   writeSerialChar(0x7e);
 }
 
