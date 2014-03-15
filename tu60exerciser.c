@@ -356,32 +356,16 @@ int main () {
       do {
 	ret = readHdlcFrame(&cmd, &drive, &newseqno, buf, 128, &size);
 	printf("Received cmd=%d drive=%d size=%04X ret=%d\n\r", cmd, drive, size, ret);
-	/*	if (rxseqno == newseqno) {
-	  sendAck(drive, rxseqno);
-	  writeHdlcFrame (cmd | 0x80, drive, rxseqno, &ret, 2);
-	  continue;
-	  }*/
-	//if (pollConsole()) break;
 	if (ret && (size<=128) && ((cmd==CMD_WRITE)|| (cmd=CMD_WFG)) && ((drive==0) || (drive==1))) {
-	  //rxseqno = newseqno;
 	  printf("Sending ACK\n\r");
 	  sendAck(drive, rxseqno);
-	  //putchar('A');
 	  switch (cmd) {
 	  case CMD_WRITE:
-	    //printf("Writing %d bytes to TU60 drive unit %d.\r\n", size, drive);
 	    ret = writeBlock(drive, buf, size);
-	    //printf("Block written!\r\n");
-	    //printf("Sending result frame.\r\n");
-	    //putchar('B');
 	    writeHdlcFrame (cmd | 0x80, drive, rxseqno, &ret, 2);
-	    //putchar('B');
 	    break;
 	  case CMD_WFG:
-	    //printf("Writing a file gap %d bytes to TU60 drive unit %d.\r\n", size, drive);
 	    ret = writeFileGap(drive);
-	    //printf("Block written!\r\n");
-	    //printf("Sending result frame.\r\n");
 	    writeHdlcFrame (cmd | 0x80, drive, rxseqno, &ret, 2);
 	    break;
 	  default:

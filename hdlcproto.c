@@ -1,15 +1,3 @@
-#define printf tfp_printf
-#ifdef DEBUG
-#include <stdio.h>
-#endif
-
-#ifdef DEBUG
-#define debug fprintf
-#else
-int stderr=0;
-int debug (int fd, char * s,...) {return 0;}  
-#endif
-
 char readSerialChar();
 void writeSerialChar(char);
 
@@ -77,13 +65,11 @@ int readHdlcFrame(char * cmd, char * drive, char * seq, char * buf, int maxSize,
     case COMMAND:
       *cmd = ch;
       computeCrcChar(ch);
-      debug(stderr, "******* CMD=%d\n", *cmd);
       demuxState = DRIVE;
       break;
     case DRIVE:
       *drive = ch;
       computeCrcChar(ch);
-      debug(stderr, "******* DRIVE=%d\n", *drive);
       demuxState = SEQNO;
       break;
     case SEQNO:
@@ -93,20 +79,17 @@ int readHdlcFrame(char * cmd, char * drive, char * seq, char * buf, int maxSize,
       break;
     case SIZELO:
       *size = (0xff & (int) ch);
-      debug(stderr, "******* SIZE=%d\n", *size);
       computeCrcChar(ch);
       demuxState= SIZEHI;
       break;
     case SIZEHI:
       *size += (0xff & ((int) ch))*256;
-      debug(stderr, "******* SIZE=%d\n", *size);
       computeCrcChar(ch); 
       demuxState = DATA;
       if (*size==0) demuxState=CRC1;
       break;
     case DATA:
       buf[i]=ch;
-      debug(stderr, "******* DATA=%d\n", buf[i]);
       computeCrcChar(ch); 
       i++;
       if (i > maxSize) {
@@ -117,12 +100,10 @@ int readHdlcFrame(char * cmd, char * drive, char * seq, char * buf, int maxSize,
       }    
       break;
     case CRC1:
-      debug(stderr, "******* CRC1=%d %d\n",ch, sum);
       computeCrcChar(ch); 
       demuxState = CRC2;
       break;
     case CRC2:
-      debug(stderr, "******* CRC2=%d %d\n",ch, sum); 
       computeCrcChar(ch); 
       state = WAITING_FOR_END_FLAG;
       break;
