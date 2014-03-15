@@ -9,8 +9,8 @@
 #include <libgen.h>
 
 
-int readHdlcFrame(char *, char *, char *, char *, int, int *);
-void writeHdlcFrame (char, char, char, char *, int);
+int readHdlcFrame(char *, char *, char *, int, int *);
+void writeHdlcFrame (char, char, char *, int);
 int serfd;
 
 char readSerialChar () {
@@ -35,20 +35,20 @@ void writeSerialChar (char ch) {
 #define CMD_WRITE_RESULT (0x80 | CMD_WRITE)
 #define CMD_WFG_RESULT (0x80 | CMD_WFG)
 
-void writeBlock(char drive,  char seqno, char * buf, int size) {
-  writeHdlcFrame (CMD_WRITE, drive, seqno, buf, size);
+void writeBlock(char drive, char * buf, int size) {
+  writeHdlcFrame (CMD_WRITE, drive, buf, size);
 }
 
-void writeFileGap(char drive, char seqno) {
-  writeHdlcFrame (CMD_WFG,drive, seqno, NULL, 0); 
+void writeFileGap(char drive) {
+  writeHdlcFrame (CMD_WFG,drive, NULL, 0); 
 }
 
-void sendAck(char drive, char seqno) {
-  writeHdlcFrame (CMD_ACK, drive, seqno, NULL, 0);
+void sendAck(char drive) {
+  writeHdlcFrame (CMD_ACK, drive, NULL, 0);
 }
 
-void sendNack(char drive, char seqno) {
-  writeHdlcFrame (CMD_NACK, drive, seqno, NULL, 0);
+void sendNack(char drive) {
+  writeHdlcFrame (CMD_NACK, drive, NULL, 0);
 }
 
 int main (int argc, char *argv[])
@@ -82,7 +82,6 @@ int main (int argc, char *argv[])
   short status;
   int readingFilename;
   char * basestr;
-  char seqno;
 
   while ((opt = getopt(argc, argv, "t:p:d:")) != -1) {
     switch (opt) {
@@ -248,30 +247,28 @@ int main (int argc, char *argv[])
     for (i=0;i<32;i++) fprintf(stderr, "%02X ", ((int)header[i]) & 0xff);
     fprintf(stderr, "\n");
     fprintf(stderr, "size=%d\n", size);
-    writeBlock(drive, seqno, header, 32);
+    writeBlock(drive, header, 32);
     fprintf (stderr, "************ HEJ 2*********\n");
     // receive result
-    ret = readHdlcFrame(&cmd,&drive, &seqno, (char *) &status , 2, &framesize);
+    ret = readHdlcFrame(&cmd,&drive, (char *) &status , 2, &framesize);
     fprintf (stderr, "Received CMD=%d RET=%d drive=%d framesize=%d status=%04X\n", cmd, ret, drive, framesize,status);
     i = 0;
     // write 128 byte data blocks
     do {
       //sleep(1);
-      seqno++;
-      writeBlock(drive, seqno, filebuf+i, 128);
+      writeBlock(drive, filebuf+i, 128);
       i+=128; size-=128;
       // receive result
-      ret = readHdlcFrame(&cmd,&drive, &seqno, (char *) &status, 2, &framesize);
+      ret = readHdlcFrame(&cmd,&drive, (char *) &status, 2, &framesize);
       fprintf (stderr, "Received CMD=%d RET=%d drive=%d framesize=%d status =%04X\n", cmd, ret, drive, framesize,status);
 
     }
     while (size > 0);
     
     // write file gap
-    seqno++;
-    writeFileGap(drive, seqno);
+    writeFileGap(drive);
          // receive result
-    ret = readHdlcFrame(&cmd,&drive, &seqno, (char *) &status, 2, &framesize);
+    ret = readHdlcFrame(&cmd,&drive, (char *) &status, 2, &framesize);
     fprintf (stderr, "Received CMD=%d RET=%d drive=%d framesize=%d status =%04X\n", cmd, ret, drive, framesize,status);
   tcflush(serfd, TCIOFLUSH);
   close(serfd);
