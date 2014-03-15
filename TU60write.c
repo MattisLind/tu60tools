@@ -248,14 +248,7 @@ int main (int argc, char *argv[])
     for (i=0;i<32;i++) fprintf(stderr, "%02X ", ((int)header[i]) & 0xff);
     fprintf(stderr, "\n");
     fprintf(stderr, "size=%d\n", size);
-    do {
-      writeBlock(drive, seqno, header, 32);
-      // Receive ACK hopefully
-      ret = readHdlcFrame(&cmd, &drive, &seqno, NULL, 0, &framesize);
-
-      fprintf (stderr, "Received CMD=%d RET=%d drive=%d framesize=%d\n", cmd, ret, drive, framesize);
-
-    } while (!ret && cmd==CMD_NACK);
+    writeBlock(drive, seqno, header, 32);
     fprintf (stderr, "************ HEJ 2*********\n");
     // receive result
     ret = readHdlcFrame(&cmd,&drive, &seqno, (char *) &status , 2, &framesize);
@@ -265,14 +258,7 @@ int main (int argc, char *argv[])
     do {
       //sleep(1);
       seqno++;
-      do {
-	fprintf (stderr, "************ HEJ *********\n");
-	writeBlock(drive, seqno, filebuf+i, 128);
-	fprintf(stderr, "******* i=%d size=%d ****\n\n\n", i, size);
-	// receive ack
-	ret = readHdlcFrame(&cmd,&drive, &seqno, NULL, 0, &framesize);
-	fprintf (stderr, "Received CMD=%d RET=%d drive=%d framesize=%d\n", cmd, ret, drive, framesize);
-      } while (!ret  && cmd==CMD_NACK);
+      writeBlock(drive, seqno, filebuf+i, 128);
       i+=128; size-=128;
       // receive result
       ret = readHdlcFrame(&cmd,&drive, &seqno, (char *) &status, 2, &framesize);
@@ -284,12 +270,9 @@ int main (int argc, char *argv[])
     // write file gap
     seqno++;
     writeFileGap(drive, seqno);
-      // receive ack
-    ret = readHdlcFrame(&cmd,&drive, &seqno, NULL, 0, &framesize);
-      fprintf (stderr, "Received CMD=%d RET=%d drive=%d framesize=%d\n", cmd, ret, drive, framesize);
-      // receive result
-      ret = readHdlcFrame(&cmd,&drive, &seqno, (char *) &status, 2, &framesize);
-      fprintf (stderr, "Received CMD=%d RET=%d drive=%d framesize=%d status =%04X\n", cmd, ret, drive, framesize,status);
+         // receive result
+    ret = readHdlcFrame(&cmd,&drive, &seqno, (char *) &status, 2, &framesize);
+    fprintf (stderr, "Received CMD=%d RET=%d drive=%d framesize=%d status =%04X\n", cmd, ret, drive, framesize,status);
   tcflush(serfd, TCIOFLUSH);
   close(serfd);
   close(filefd);
