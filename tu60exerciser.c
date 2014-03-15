@@ -218,29 +218,12 @@ void writeSerialChar (char ch) {
 #define CMD_WRITE_RESULT (0x80 | CMD_WRITE)
 #define CMD_WFG_RESULT (0x80 | CMD_WFG)
 
-
-/*
-void sendWrite(char drive,  char * buf, int size) {
-  writeHdlcFrame (CMD_WRITE, drive, txseqno, buf, size);
-}
-
-void sendWriteFileGap(char drive) {
-  writeHdlcFrame (CMD_WFG,drive,txseqno, NULL, 0); 
-}
-*/
-
 void sendAck(char drive, char seqno) {
   writeHdlcFrame (CMD_ACK, drive, seqno, NULL, 0);
 }
 
 void sendNack(char drive, char seqno) {
   writeHdlcFrame (CMD_NACK, drive, seqno,NULL, 0);
-}
-
-
-void rxserv () {
-  flag=1;
-  disableRxInterrupt();
 }
 
 int main () {
@@ -356,26 +339,18 @@ int main () {
       do {
 	ret = readHdlcFrame(&cmd, &drive, &newseqno, buf, 128, &size);
 	printf("Received cmd=%d drive=%d size=%04X ret=%d\n\r", cmd, drive, size, ret);
-	if (ret && (size<=128) && ((cmd==CMD_WRITE)|| (cmd=CMD_WFG)) && ((drive==0) || (drive==1))) {
-	  printf("Sending ACK\n\r");
-	  sendAck(drive, rxseqno);
-	  switch (cmd) {
-	  case CMD_WRITE:
-	    ret = writeBlock(drive, buf, size);
-	    writeHdlcFrame (cmd | 0x80, drive, rxseqno, &ret, 2);
-	    break;
-	  case CMD_WFG:
-	    ret = writeFileGap(drive);
-	    writeHdlcFrame (cmd | 0x80, drive, rxseqno, &ret, 2);
-	    break;
-	  default:
-	    printf ("Unhandled cmd = %d\r\n", cmd);
-	    break;
-	  }
-	}
-	else {
-	  printf("Sending NACK\n\r");
-	  sendNack(drive, rxseqno);
+	switch (cmd) {
+	case CMD_WRITE:
+	  ret = writeBlock(drive, buf, size);
+	  writeHdlcFrame (cmd | 0x80, drive, rxseqno, &ret, 2);
+	  break;
+	case CMD_WFG:
+	  ret = writeFileGap(drive);
+	  writeHdlcFrame (cmd | 0x80, drive, rxseqno, &ret, 2);
+	  break;
+	default:
+	  printf ("Unhandled cmd = %d\r\n", cmd);
+	  break;
 	}
       } while (1);
       break;
