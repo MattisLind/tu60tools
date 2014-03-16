@@ -36,12 +36,12 @@ void writeSerialChar (char ch) {
 #define CMD_WFG_RESULT (0x80 | CMD_WFG)
 
 void writeBlock(char drive, char * buf, int size) {
-  fprintf(stderrm "WriteBlock drive=%d size=%d\n",drive, size); 
+  fprintf(stderr, "WriteBlock drive=%d size=%d\n",drive, size); 
   writeHdlcFrame (CMD_WRITE, drive, buf, size);
 }
 
 void writeFileGap(char drive) {
-  fprintf(stderrm "WriteFileGap drive=%d\n",drive); 
+  fprintf(stderr, "WriteFileGap drive=%d\n",drive); 
   writeHdlcFrame (CMD_WFG,drive, NULL, 0); 
 }
 
