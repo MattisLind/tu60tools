@@ -36,10 +36,12 @@ void writeSerialChar (char ch) {
 #define CMD_WFG_RESULT (0x80 | CMD_WFG)
 
 void writeBlock(char drive, char * buf, int size) {
+  fprintf(stderrm "WriteBlock drive=%d size=%d\n",drive, size); 
   writeHdlcFrame (CMD_WRITE, drive, buf, size);
 }
 
 void writeFileGap(char drive) {
+  fprintf(stderrm "WriteFileGap drive=%d\n",drive); 
   writeHdlcFrame (CMD_WFG,drive, NULL, 0); 
 }
 
@@ -259,6 +261,7 @@ int main (int argc, char *argv[])
       writeBlock(drive, filebuf+i, 128);
       i+=128; size-=128;
       // receive result
+      fprintf(stderr, "Before readHdlcFrame\n");
       ret = readHdlcFrame(&cmd,&drive, (char *) &status, 2, &framesize);
       fprintf (stderr, "Received CMD=%d RET=%d drive=%d framesize=%d status =%04X\n", cmd, ret, drive, framesize,status);
 
@@ -267,6 +270,7 @@ int main (int argc, char *argv[])
     
     // write file gap
     writeFileGap(drive);
+    fprintf(stderr, "Before readHdlcFrame\n");
          // receive result
     ret = readHdlcFrame(&cmd,&drive, (char *) &status, 2, &framesize);
     fprintf (stderr, "Received CMD=%d RET=%d drive=%d framesize=%d status =%04X\n", cmd, ret, drive, framesize,status);

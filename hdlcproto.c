@@ -86,7 +86,8 @@ int readHdlcFrame(char * cmd, char * drive, char * buf, int maxSize, int * size)
       //computeCrcChar(ch); 
       sum += ch;
       demuxState = DATA;
-      if (*size==0) demuxState=CRC1;
+      //      if (*size==0) demuxState=CRC1;
+      if (*size==0) demuxState=SUM;
       break;
     case DATA:
       buf[i]=ch;
