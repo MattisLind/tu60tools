@@ -211,30 +211,28 @@ void writeSerialChar (char ch) {
 
 #define CMD_WRITE 0
 #define CMD_WFG 1
-#define CMD_ACK 2
-#define CMD_NACK 3
+#define CMD_SFF 2
+#define CMD_SFB 3
+#define CMD_SBF 4
+#define CMD_SBB 5
+#define CMD_READ 6
+#define CMD_REWIND 7
 #define CMD_WRITE_RESULT (0x80 | CMD_WRITE)
 #define CMD_WFG_RESULT (0x80 | CMD_WFG)
 
-void sendAck(char drive) {
-  writeHdlcFrame (CMD_ACK, drive, NULL, 0);
-}
-
-void sendNack(char drive) {
-  writeHdlcFrame (CMD_NACK, drive,NULL, 0);
-}
 
 int main () {
   init_printf((void *) 0, putch);
   char ch = 0;
   unsigned char writeBuf[129];
   unsigned char readBuf[129];
-  char buf[128];
+  char buf[130];
   int ret;
   char cmd;
   short drive = 0, i;
   short patternSize;
   int size;
+  int readSize;
   readBuf[128]=0;
   while (ch != 'q' && ch != 'Q') {
     printf ("TU60 Exerciser drive %d\r\n", drive);
@@ -341,6 +339,36 @@ int main () {
 	  break;
 	case CMD_WFG:
 	  ret = writeFileGap(drive);
+	  writeHdlcFrame (cmd | 0x80, drive, &ret, 2);
+	  break;
+	case CMD_SFF:
+	  ret = spaceForwardFile(drive);
+	  writeHdlcFrame (cmd | 0x80, drive, &ret, 2);
+	  break;
+	case CMD_SBF:
+	  ret = spaceBackwardFile(drive);
+	  writeHdlcFrame (cmd | 0x80, drive, &ret, 2);
+	  break;
+	case CMD_SFB:
+	  ret = spaceForwardBlock(drive);
+	  writeHdlcFrame (cmd | 0x80, drive, &ret, 2);
+	  break;
+	case CMD_SBB:
+	  ret = spaceBackwardBlock(drive);
+	  writeHdlcFrame (cmd | 0x80, drive, &ret, 2);
+	  break;
+	case CMD_READ:
+	  if (size == 2) {
+	    readSize = buf[0] + 256*buf[1];
+	    ret = readBlock(drive,buf+2,readSize);
+	    buf[0] = 0xff & ret;
+	    for (i=0; i<8; i++) ret = ret >> 1;
+	    buf[1] = 0xff & ret;
+	    writeHdlcFrame (cmd | 0x80, drive, buf, readSize+2);
+	  }
+	  break;
+	case CMD_REWIND:
+	  ret = rewind(drive);
 	  writeHdlcFrame (cmd | 0x80, drive, &ret, 2);
 	  break;
 	default:
