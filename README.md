@@ -33,3 +33,4 @@ Communication with the host takes place over serial line with CSR 176500.
 
 It consists of source files tu60write.c and hdlcproto_host.c
 
+I know this is rather crappy code. But the intention is to get something working rather than makeing it beautiful. If anyone has use for it. Good. So be it.
