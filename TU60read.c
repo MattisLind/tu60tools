@@ -180,16 +180,15 @@ int main (int argc, char *argv[])
   sleep(1);
   printf ("Now transmitting\n");
 
-    writeBlock(drive, header, 32);
+    readBlock(drive, NULL, 0);
     fprintf (stderr, "************ HEJ 2*********\n");
     // receive result
     ret = readHdlcFrame(&cmd,&drive, (char *) &status , 2, &framesize);
     fprintf (stderr, "Received CMD=%d RET=%d drive=%d framesize=%d status=%04X\n", cmd, ret, drive, framesize,status);
     i = 0;
-    // write 128 byte data blocks
+    // read 128 byte data blocks
     do {
-      //sleep(1);
-      writeBlock(drive, filebuf+i, 128);
+      readBlock(drive, filebuf+i, 128);
       i+=128; size-=128;
       // receive result
       fprintf(stderr, "Before readHdlcFrame\n");
@@ -199,12 +198,7 @@ int main (int argc, char *argv[])
     }
     while (size > 0);
     
-    // write file gap
-    writeFileGap(drive);
-    fprintf(stderr, "Before readHdlcFrame\n");
-         // receive result
-    ret = readHdlcFrame(&cmd,&drive, (char *) &status, 2, &framesize);
-    fprintf (stderr, "Received CMD=%d RET=%d drive=%d framesize=%d status =%04X\n", cmd, ret, drive, framesize,status);
+
   tcflush(serfd, TCIOFLUSH);
   close(serfd);
   close(filefd);

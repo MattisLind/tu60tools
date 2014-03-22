@@ -1,3 +1,4 @@
+#include "tu60.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include <fcntl.h>
@@ -28,13 +29,6 @@ void writeSerialChar (char ch) {
   write(serfd, &ch, 1);
 }
 
-#define CMD_WRITE 0
-#define CMD_WFG 1
-#define CMD_ACK 2
-#define CMD_NACK 3
-#define CMD_WRITE_RESULT (0x80 | CMD_WRITE)
-#define CMD_WFG_RESULT (0x80 | CMD_WFG)
-
 void writeBlock(char drive, char * buf, int size) {
   fprintf(stderr, "WriteBlock drive=%d size=%d\n",drive, size); 
   writeHdlcFrame (CMD_WRITE, drive, buf, size);
@@ -43,14 +37,6 @@ void writeBlock(char drive, char * buf, int size) {
 void writeFileGap(char drive) {
   fprintf(stderr, "WriteFileGap drive=%d\n",drive); 
   writeHdlcFrame (CMD_WFG,drive, NULL, 0); 
-}
-
-void sendAck(char drive) {
-  writeHdlcFrame (CMD_ACK, drive, NULL, 0);
-}
-
-void sendNack(char drive) {
-  writeHdlcFrame (CMD_NACK, drive, NULL, 0);
 }
 
 int main (int argc, char *argv[])
