@@ -1,17 +1,11 @@
 #include "tu60.h"
 #include <stdlib.h>
 #include <stdio.h>
-#include <fcntl.h>
 #include <unistd.h>
-#include <termios.h>
 #include <sys/stat.h>
 #include <string.h>
 #include <time.h>
 #include <libgen.h>
-
-
-int readHdlcFrame(char *, char *, char *, int, int *);
-void writeHdlcFrame (char, char, char *, int);
 int serfd;
 
 char readSerialChar () {
@@ -39,12 +33,10 @@ void readBlock(char drive, char * buf, int size) {
 int main (int argc, char *argv[])
 {
   int  filefd, ret, opt;
-  struct termios toptions;
   char b; 
   int n, timeout, portSet=0;
   char cmd;
   char serialPort[256];
-  char serialPort2[20];
   struct stat st;
   int size;
   int framesize;
@@ -67,6 +59,7 @@ int main (int argc, char *argv[])
   short status;
   int readingFilename;
   char * basestr;
+  char readSize [2];
 
   while ((opt = getopt(argc, argv, "p:d:")) != -1) {
     switch (opt) {
@@ -94,93 +87,15 @@ int main (int argc, char *argv[])
     exit(EXIT_FAILURE);
   }
 
-  if (!client) {
-    printf("file argument = %s\n", argv[optind]);
-
-
-    filedes = open (argv[optind], O_RDONLY);
-      printf ("0");
-    if (filedes == -1) {
-      perror("Failed to open file");
-      exit(EXIT_FAILURE);
-    }
-    printf ("1");
-    ret = fstat(filedes, &st);
-    if (ret != 0) {
-      perror("Failed to stat file");
-      exit(EXIT_FAILURE);
-    }
-    size = st.st_size;
-
-    printf ("file size=%d", size);
-
-    filebuf = malloc (size);
-    if (filebuf==NULL) {
-      perror("Failed to allocate memory");
-      exit(EXIT_FAILURE);    
-    }
-
-    memset(filebuf, 0, size);
-
-    ret = read (filedes, filebuf, size);
-    if ((ret < 0) || (ret != size)) {
-      perror ("Failed to read file into memory");
-      exit(EXIT_FAILURE);
-      }
+  if ((serfd = serInit(serialPort))<0) {
+    exit(-1);
   }
-  fprintf (stderr, "Seriaport=%s\n", serialPort);
-  serfd = open(serialPort, O_RDWR |  O_NONBLOCK); 
-
-  if (serfd == -1)  {
-    perror("Failed to open serial port ");
-    exit(1);
-  }
-
-  printf ("Opened serialport  \n");    
-  if (tcgetattr(serfd, &toptions) < 0) {
-    perror("Couldn't  get terminal attributes");
-    exit(1);
-  }
-  printf ("got attributes\n");    
-  cfsetispeed(&toptions, B9600);
-  printf ("Setting inspeed\n");    
-  cfsetospeed(&toptions, B9600);
-  printf ("Setting outspeed \n");    
-  
-  // 8N1
-  toptions.c_cflag &= ~CSIZE;
-  toptions.c_cflag |= CS8;
-  toptions.c_cflag &= ~PARENB;
-  toptions.c_cflag &= ~CSTOPB;
-  // no flow control
-  toptions.c_cflag &= ~CRTSCTS;
-
-  toptions.c_cflag |= CREAD | CLOCAL;            // turn on READ & ignore ctrl lines
-  toptions.c_iflag &= ~(IXON | IXOFF | IXANY);   // turn off s/w flow ctrl
-
-  toptions.c_lflag &= ~(ICANON | ECHO | ECHOE | ISIG);   //  raw mode
-  toptions.c_oflag &= ~OPOST; // raw mode
-
-  toptions.c_cc[VMIN]  = 0;
-  toptions.c_cc[VTIME] = 0;
-
-  printf ("Before setting attributes TCSANOW \n");    
-  tcsetattr(serfd, TCSANOW, &toptions);
-  printf ("Before setting attributes TCSAFLUSH \n");
-  if( tcsetattr(serfd, TCSAFLUSH, &toptions) < 0) {
-    perror("Couldn't set terminal attributes");
-    exit(1);
-  }
-  printf ("Before sleep\n");
-  sleep(1);
-  printf ("About to flush\n");
-  tcflush(serfd, TCIOFLUSH);
     
-  printf ("After flush\n");
   sleep(1);
-  printf ("Now transmitting\n");
 
-    readBlock(drive, NULL, 0);
+  readSize[0] = 128;
+  readSize[1] = 0;
+    readBlock(drive, readSize, 2);
     fprintf (stderr, "************ HEJ 2*********\n");
     // receive result
     ret = readHdlcFrame(&cmd,&drive, (char *) &status , 2, &framesize);
@@ -198,8 +113,6 @@ int main (int argc, char *argv[])
     }
     while (size > 0);
     
-
-  tcflush(serfd, TCIOFLUSH);
-  close(serfd);
+    serClose(serfd);
   close(filefd);
 }

@@ -8,3 +8,8 @@
 #define CMD_REWIND 7
 #define CMD_WRITE_RESULT (0x80 | CMD_WRITE)
 #define CMD_WFG_RESULT (0x80 | CMD_WFG)
+
+int readHdlcFrame(char *, char *, char *, int, int *);
+void writeHdlcFrame (char, char, char *, int);
+int serInit(char *);
+void serClose (int);
