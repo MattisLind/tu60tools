@@ -350,12 +350,18 @@ int main () {
 	  break;
 	case CMD_READ:
 	  if (size == 2) {
-	    readSize = buf[0] & buf[1]<<8;
+	    readSize = (short) 0xff & buf[0] /*& buf[1]<<8*/;
+	    printf ("readSize=%04X\n\r",readSize); 
 	    ret = readBlock(drive,buf+2,readSize);
+	    printf ("ret=%04X\n\r", ret);
 	    buf[0] = 0xff & ret;
 	    for (i=0; i<8; i++) ret = ret >> 1;
 	    buf[1] = 0xff & ret;
+	    for (i=0; i<34;i++) printf("%02X ",buf[i]);
+	    printf("\n\r");
 	    writeHdlcFrame (cmd | 0x80, drive, buf, readSize+2);
+	  } else {
+	    printf("Invalid READ size %02X\n\r", size);
 	  }
 	  break;
 	case CMD_REWIND:
