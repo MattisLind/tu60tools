@@ -27,7 +27,7 @@ void writeSerialChar (char ch) {
 
 
 void readBlock(char drive, char * buf, int size) {
-  fprintf(stderr, "WriteBlock drive=%d size=%d\n",drive, size); 
+  fprintf(stderr, "ReadBlock drive=%d size=%d\n",drive, size); 
   writeHdlcFrame (CMD_READ, drive, buf, size);
 }
 
@@ -109,27 +109,27 @@ int main (int argc, char *argv[])
   memset (fileName, 0,11);
   j=0;
   for (i=0;i<6;i++) {
-    if(buf[i] == ' ') {
+    if(buf[i+2] == ' ') {
       break;
     }
     else {
-      fileName[j++] = buf[i];
+      fileName[j++] = buf[i+2];
     }
   }
   fileName[j++] = '.';
   for (i=6;i<9;i++) {
-    if(buf[i] == ' ') {
+    if(buf[i+2] == ' ') {
       break;
     }
     else {
-      fileName[j++] = buf[i];
+      fileName[j++] = buf[i+2];
     }
   }
   fprintf (stderr, "filname: %s\n", fileName);
-  fprintf (stderr, "filetype: %d\n", buf[9]);
-  numBlocks = buf[10]<<8 + buf[11];
+  fprintf (stderr, "filetype: %d\n", buf[9+2]);
+  numBlocks = buf[10+2]<<8 + buf[11+2];
   fprintf (stderr, "numBlocks: %d\n", numBlocks);
-  size = numBlocks * 128;
+  //size = numBlocks * 128;
   filebuf = malloc (size);
   i = 0;
   // parse date
@@ -137,23 +137,26 @@ int main (int argc, char *argv[])
   tm.tm_min = 0; 
   tm.tm_hour = 0;
   tm.tm_isdst = -1;
-  tm.tm_year = (buf[18]-0x30) * 10 + (buf[19]-0x30); 
-  tm.tm_mon = ((buf[16]-0x30) * 10 + (buf[17]-0x30))-1; 
-  tm.tm_mday = (buf[14]-0x30) * 10 + (buf[15]-0x30); 
+  tm.tm_year = (buf[18+2]-0x30) * 10 + (buf[19+2]-0x30); 
+  tm.tm_mon = ((buf[16+2]-0x30) * 10 + (buf[17+2]-0x30))-1; 
+  tm.tm_mday = (buf[14+2]-0x30) * 10 + (buf[15+2]-0x30); 
   creationTime = mktime (&tm);
   fprintf (stderr, "File creation time : %s\n", ctime(&creationTime));
   // read 128 byte data blocks
+  readSize[0] = 128;
+  readSize[1] = 0;
   do {
-    readBlock(drive, buf, 130);
+    readBlock(drive, readSize, 2);
     // receive result
     fprintf(stderr, "Before readHdlcFrame\n");
     ret = readHdlcFrame(&cmd,&drive, buf, 130, &framesize);
-    status = buf[0]<<8 && buf[1];
+    status = buf[0]<<8 & buf[1];
     fprintf (stderr, "Received CMD=%d RET=%d drive=%d framesize=%d status =%04X\n", cmd, ret, drive, framesize,status);
+    for (i=0;i<framesize;i++) fprintf(stderr, "%02X ", ((int)buf[i+2]) & 0xff);
     memcpy(filebuf+i, buf+2,128);
     i+=128; size-=128;
    }
-  while (size > 0);  
+  while ((status & 0x0800)==0);  
   serClose(serfd);
   filefd = open(fileName, O_CREAT | O_TRUNC | O_WRONLY, 0666);
   if (filefd == -1) {
