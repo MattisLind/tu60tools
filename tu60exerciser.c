@@ -218,6 +218,7 @@ int main () {
   char buf[130];
   int ret;
   char cmd;
+  unsigned char tmp;
   short drive = 0, i;
   short patternSize;
   int size;
@@ -319,32 +320,33 @@ int main () {
     case 'R':
     case 'r':
       do {
-	ret = readHdlcFrame(&cmd, &drive, buf, 128, &size);
+	ret = readHdlcFrame(&cmd, &tmp, buf, 128, &size);
+	drive = (short) tmp;
 	printf("Received cmd=%d drive=%d size=%04X ret=%d\n\r", cmd, drive, size, ret);
 	switch (cmd) {
 	case CMD_WRITE:
 	  ret = writeBlock(drive, buf, size);
-	  writeHdlcFrame (cmd | 0x80, drive, &ret, 2);
+	  writeHdlcFrame (cmd | 0x80, drive, (char *) &ret, 2);
 	  break;
 	case CMD_WFG:
 	  ret = writeFileGap(drive);
-	  writeHdlcFrame (cmd | 0x80, drive, &ret, 2);
+	  writeHdlcFrame (cmd | 0x80, drive, (char *) &ret, 2);
 	  break;
 	case CMD_SFF:
 	  ret = spaceForwardFile(drive);
-	  writeHdlcFrame (cmd | 0x80, drive, &ret, 2);
+	  writeHdlcFrame (cmd | 0x80, drive, (char *) &ret, 2);
 	  break;
 	case CMD_SBF:
 	  ret = spaceBackwardFile(drive);
-	  writeHdlcFrame (cmd | 0x80, drive, &ret, 2);
+	  writeHdlcFrame (cmd | 0x80, drive, (char *) &ret, 2);
 	  break;
 	case CMD_SFB:
 	  ret = spaceForwardBlock(drive);
-	  writeHdlcFrame (cmd | 0x80, drive, &ret, 2);
+	  writeHdlcFrame (cmd | 0x80, drive, (char *)&ret, 2);
 	  break;
 	case CMD_SBB:
 	  ret = spaceBackwardBlock(drive);
-	  writeHdlcFrame (cmd | 0x80, drive, &ret, 2);
+	  writeHdlcFrame (cmd | 0x80, drive, (char *)&ret, 2);
 	  break;
 	case CMD_READ:
 	  if (size == 2) {
@@ -358,7 +360,7 @@ int main () {
 	  break;
 	case CMD_REWIND:
 	  ret = rewind(drive);
-	  writeHdlcFrame (cmd | 0x80, drive, &ret, 2);
+	  writeHdlcFrame (cmd | 0x80, drive, (char *)&ret, 2);
 	  break;
 	default:
 	  printf ("Unhandled cmd = %d\r\n", cmd);
