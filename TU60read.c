@@ -6,6 +6,8 @@
 #include <string.h>
 #include <time.h>
 #include <libgen.h>
+#include <fcntl.h>
+
 int serfd;
 
 char readSerialChar () {
@@ -153,5 +155,11 @@ int main (int argc, char *argv[])
    }
   while (size > 0);  
   serClose(serfd);
+  filefd = open(fileName, O_CREAT | O_TRUNC | O_WRONLY, 0666);
+  if (filefd == -1) {
+    perror ("Cannot open");
+    exit(-1);
+  }
+  write (filefd, filebuf, size);
   close(filefd);
 }
