@@ -85,10 +85,10 @@ int main (int argc, char *argv[])
     fprintf (stderr, "Expected -p <serial port>\n");
     exit(EXIT_FAILURE);
   }
-  if (optind >= argc && !client) {
+  /*  if (optind >= argc) {
     fprintf(stderr, "Expected argument after options\n");
     exit(EXIT_FAILURE);
-  }
+    }*/
 
   if ((serfd = serInit(serialPort))<0) {
     exit(-1);
