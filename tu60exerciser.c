@@ -348,7 +348,7 @@ int main () {
 	  break;
 	case CMD_READ:
 	  if (size == 2) {
-	    readSize = buf[0] + 256*buf[1];
+	    readSize = buf[0] & buf[1]<<8;
 	    ret = readBlock(drive,buf+2,readSize);
 	    buf[0] = 0xff & ret;
 	    for (i=0; i<8; i++) ret = ret >> 1;
