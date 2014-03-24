@@ -112,7 +112,7 @@ short readContinuous (short drive) {
   }
 }
 
-short readBlock (short drive, unsigned char * buf, short size) {
+short readBlock (short drive, unsigned char * buf, short * size) {
   unsigned short cmd;
   // Wait for unit to become ready
   while (!(000040 & readTA11CSR()));
@@ -222,7 +222,7 @@ int main () {
   short drive = 0, i;
   short patternSize;
   int size;
-  int readSize;
+  short readSize;
   readBuf[128]=0;
   while (ch != 'q' && ch != 'Q') {
     printf ("TU60 Exerciser drive %d\r\n", drive);
@@ -252,7 +252,7 @@ int main () {
       printf ("Result: %04x\r\n", writeBlock (drive,writeBuf, patternSize));
       break;
     case '2':
-      printf ("Result: %04x\r\n", readBlock (drive, readBuf, patternSize));
+      printf ("Result: %04x\r\n", readBlock (drive, readBuf, &patternSize));
       printf ("Read string=%s\r\n", readBuf);
       break;
     case '3':
@@ -352,14 +352,14 @@ int main () {
 	  if (size == 2) {
 	    readSize = (short) 0xff & buf[0] /*& buf[1]<<8*/;
 	    printf ("readSize=%04X\n\r",readSize); 
-	    ret = readBlock(drive,buf+2,readSize);
+	    ret = readBlock(drive,buf+2,&readSize);
 	    printf ("ret=%04X\n\r", ret);
 	    buf[0] = 0xff & ret;
 	    for (i=0; i<8; i++) ret = ret >> 1;
 	    buf[1] = 0xff & ret;
-	    for (i=0; i<34;i++) printf("%02X ",buf[i]);
+	    for (i=0; i<(128-readSize+2);i++) printf("%02X ",buf[i] & 0xff);
 	    printf("\n\r");
-	    writeHdlcFrame (cmd | 0x80, drive, buf, readSize+2);
+	    writeHdlcFrame (cmd | 0x80, drive, buf, 128-readSize+2);
 	  } else {
 	    printf("Invalid READ size %02X\n\r", size);
 	  }
