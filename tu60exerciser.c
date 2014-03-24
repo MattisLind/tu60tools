@@ -112,30 +112,32 @@ short readContinuous (short drive) {
   }
 }
 
-short readBlock (short drive, unsigned char * buf, short * size) {
+short readBlock (short drive, unsigned char * buf, short size) {
   unsigned short cmd;
+  short s;
   // Wait for unit to become ready
+  s=size;
   while (!(000040 & readTA11CSR()));
   cmd = drive << 8;
   cmd |= READ;
-  printf ("Now writing READ cmd\r\n");
+  printf ("Now writing READ cmd size=%04X\r\n",s);
   writeTA11CSR(cmd);
-  while (*size>0) {
+  while (s>0) {
     // wait for transfer request
     while (!(0100240 & readTA11CSR()));
     if (0100040 & readTA11CSR()) break;
     *(buf++) = (unsigned char) readTA11DBUF( );
-    *size--;
+    s--;
   }
   if (0100040 & readTA11CSR()) {
-    printf("Fail: remaining bytes to read size=%d\n", *size);
+    printf("Fail: remaining bytes to read size=%d\n", s);
   }
   else {
     while (!(000200 & readTA11CSR()));
     // do ILBS sequence
     cmd =  readTA11CSR() | 000020;
     writeTA11CSR(cmd);
-    printf ("Now waiting for READY after read.\r\n");
+    printf ("Now waiting for READY after read, size=%04X.\r\n", s);
     while (!(000040 & readTA11CSR()));
   }
   return readTA11CSR();
@@ -222,7 +224,7 @@ int main () {
   short drive = 0, i;
   short patternSize;
   int size;
-  short readSize;
+  short readSize, origSize;
   readBuf[128]=0;
   while (ch != 'q' && ch != 'Q') {
     printf ("TU60 Exerciser drive %d\r\n", drive);
@@ -252,7 +254,8 @@ int main () {
       printf ("Result: %04x\r\n", writeBlock (drive,writeBuf, patternSize));
       break;
     case '2':
-      printf ("Result: %04x\r\n", readBlock (drive, readBuf, &patternSize));
+      origSize = patternSize;
+      printf ("Result: %04x\r\n", readBlock (drive, readBuf, origSize));
       printf ("Read string=%s\r\n", readBuf);
       break;
     case '3':
@@ -320,6 +323,7 @@ int main () {
     case 'R':
     case 'r':
       do {
+	printf ("Before readHdlcFrame\r\n");
 	ret = readHdlcFrame(&cmd, &tmp, buf, 128, &size);
 	drive = (short) tmp;
 	printf("Received cmd=%d drive=%d size=%04X ret=%d\n\r", cmd, drive, size, ret);
@@ -350,16 +354,18 @@ int main () {
 	  break;
 	case CMD_READ:
 	  if (size == 2) {
-	    readSize = (short) 0xff & buf[0] /*& buf[1]<<8*/;
+	    readSize = (((short) 0xff & buf[0]) > 128)?128:((short) 0xff & buf[0]) /*| buf[1]<<8*/;
 	    printf ("readSize=%04X\n\r",readSize); 
-	    ret = readBlock(drive,buf+2,&readSize);
+	    ret = readBlock(drive,buf+2,readSize);
 	    printf ("ret=%04X\n\r", ret);
 	    buf[0] = 0xff & ret;
 	    for (i=0; i<8; i++) ret = ret >> 1;
 	    buf[1] = 0xff & ret;
-	    for (i=0; i<(128-readSize+2);i++) printf("%02X ",buf[i] & 0xff);
+	    for (i=0; i<(readSize+2);i++) printf("%02X ",buf[i] & 0xff);
 	    printf("\n\r");
-	    writeHdlcFrame (cmd | 0x80, drive, buf, 128-readSize+2);
+	    printf ("size=%04X\r\n", readSize+2);
+	    writeHdlcFrame (cmd | 0x80, drive, buf, readSize+2);
+	    printf ("After writeHdlcFrame\r\n");
 	  } else {
 	    printf("Invalid READ size %02X\n\r", size);
 	  }
