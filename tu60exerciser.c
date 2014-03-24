@@ -120,15 +120,15 @@ short readBlock (short drive, unsigned char * buf, short * size) {
   cmd |= READ;
   printf ("Now writing READ cmd\r\n");
   writeTA11CSR(cmd);
-  while (size>0) {
+  while (*size>0) {
     // wait for transfer request
     while (!(0100240 & readTA11CSR()));
     if (0100040 & readTA11CSR()) break;
     *(buf++) = (unsigned char) readTA11DBUF( );
-    size--;
+    *size--;
   }
   if (0100040 & readTA11CSR()) {
-    printf("Fail: remaining bytes to read size=%d\n", size);
+    printf("Fail: remaining bytes to read size=%d\n", *size);
   }
   else {
     while (!(000200 & readTA11CSR()));
