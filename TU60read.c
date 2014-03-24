@@ -16,7 +16,7 @@ char readSerialChar () {
     n=read(serfd, &buf, 1);
     usleep( 1 * 1000 );  // wait 1 msec try again
   } while (n==0);  
-  //  fprintf (stderr, "RX %02X:\"%c\" ", 0xff & buf, buf);
+  //fprintf (stderr, "RX %02X:\"%c\" ", 0xff & buf, buf);
   return buf;
 }
 
@@ -27,7 +27,7 @@ void writeSerialChar (char ch) {
 
 
 void readBlock(char drive, char * buf, int size) {
-  fprintf(stderr, "ReadBlock drive=%d size=%d\n",drive, size); 
+  //fprintf(stderr, "ReadBlock drive=%d size=%d\n",drive, size); 
   writeHdlcFrame (CMD_READ, drive, buf, size);
 }
 
@@ -138,22 +138,24 @@ int main (int argc, char *argv[])
   tm.tm_mday = (buf[14+2]-0x30) * 10 + (buf[15+2]-0x30); 
   creationTime = mktime (&tm);
   fprintf (stderr, "File creation time : %s\n", ctime(&creationTime));
-  filefd = open(fileName, O_CREAT | O_TRUNC | O_WRONLY, 0666);
+  //filefd = open(fileName, O_CREAT | O_TRUNC | O_WRONLY, 0666);
+  filefd = open("test.tes", O_CREAT | O_TRUNC | O_WRONLY, 0666);
   if (filefd == -1) {
     perror ("Cannot open");
     exit(-1);
-  }
-
+    }
   // read 128 byte data blocks
   readSize[0] = 128;
   readSize[1] = 0;
   do {
+    sleep(5);
     readBlock(drive, readSize, 2);
     // receive result
     fprintf(stderr, "Before readHdlcFrame\n");
     ret = readHdlcFrame(&cmd,&drive, buf, 130, &framesize);
     status = buf[0]<<8 | buf[1];
     fprintf (stderr, "Received CMD=%d RET=%d drive=%d framesize=%d status =%04X\n", cmd, ret, drive, framesize,status);
+    if ((status & 0x0800)==0x0800) break;
     for (i=0;i<framesize;i++) fprintf(stderr, "%02X ", ((int)buf[i+2]) & 0xff);
     write (filefd, buf+2, framesize-2);
    }
