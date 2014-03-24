@@ -127,10 +127,6 @@ int main (int argc, char *argv[])
   }
   fprintf (stderr, "filname: %s\n", fileName);
   fprintf (stderr, "filetype: %d\n", buf[9+2]);
-  numBlocks = buf[10+2]<<8 + buf[11+2];
-  fprintf (stderr, "numBlocks: %d\n", numBlocks);
-  //size = numBlocks * 128;
-  filebuf = malloc (size);
   i = 0;
   // parse date
   tm.tm_sec = 0; 
@@ -142,6 +138,12 @@ int main (int argc, char *argv[])
   tm.tm_mday = (buf[14+2]-0x30) * 10 + (buf[15+2]-0x30); 
   creationTime = mktime (&tm);
   fprintf (stderr, "File creation time : %s\n", ctime(&creationTime));
+  filefd = open(fileName, O_CREAT | O_TRUNC | O_WRONLY, 0666);
+  if (filefd == -1) {
+    perror ("Cannot open");
+    exit(-1);
+  }
+
   // read 128 byte data blocks
   readSize[0] = 128;
   readSize[1] = 0;
@@ -150,19 +152,12 @@ int main (int argc, char *argv[])
     // receive result
     fprintf(stderr, "Before readHdlcFrame\n");
     ret = readHdlcFrame(&cmd,&drive, buf, 130, &framesize);
-    status = buf[0]<<8 & buf[1];
+    status = buf[0]<<8 | buf[1];
     fprintf (stderr, "Received CMD=%d RET=%d drive=%d framesize=%d status =%04X\n", cmd, ret, drive, framesize,status);
     for (i=0;i<framesize;i++) fprintf(stderr, "%02X ", ((int)buf[i+2]) & 0xff);
-    memcpy(filebuf+i, buf+2,128);
-    i+=128; size-=128;
+    write (filefd, buf+2, framesize-2);
    }
   while ((status & 0x0800)==0);  
   serClose(serfd);
-  filefd = open(fileName, O_CREAT | O_TRUNC | O_WRONLY, 0666);
-  if (filefd == -1) {
-    perror ("Cannot open");
-    exit(-1);
-  }
-  write (filefd, filebuf, size);
   close(filefd);
 }
