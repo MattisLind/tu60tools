@@ -16,18 +16,18 @@ char readSerialChar () {
     n=read(serfd, &buf, 1);
     usleep( 1 * 1000 );  // wait 1 msec try again
   } while (n==0);  
-  //fprintf (stderr, "RX %02X:\"%c\" ", 0xff & buf, buf);
+  fprintf (stderr, "RX %02X:\"%c\" ", 0xff & buf, buf);
   return buf;
 }
 
 void writeSerialChar (char ch) {
-  //fprintf (stderr, "TX=%02x:\"%c\" ", 0xff & ch, ch);
+  fprintf (stderr, "TX=%02x:\"%c\" ", 0xff & ch, ch);
   write(serfd, &ch, 1);
 }
 
 
 void readBlock(char drive, char * buf, int size) {
-  //fprintf(stderr, "ReadBlock drive=%d size=%d\n",drive, size); 
+  fprintf(stderr, "ReadBlock drive=%d size=%d\n",drive, size); 
   writeHdlcFrame (CMD_READ, drive, buf, size);
 }
 
@@ -138,8 +138,8 @@ int main (int argc, char *argv[])
   tm.tm_mday = (buf[14+2]-0x30) * 10 + (buf[15+2]-0x30); 
   creationTime = mktime (&tm);
   fprintf (stderr, "File creation time : %s\n", ctime(&creationTime));
-  //filefd = open(fileName, O_CREAT | O_TRUNC | O_WRONLY, 0666);
-  filefd = open("test.tes", O_CREAT | O_TRUNC | O_WRONLY, 0666);
+  filefd = open(fileName, O_CREAT | O_TRUNC | O_WRONLY, 0666);
+  //filefd = open("test.tes", O_CREAT | O_TRUNC | O_WRONLY, 0666);
   if (filefd == -1) {
     perror ("Cannot open");
     exit(-1);
